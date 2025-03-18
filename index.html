@@ -50,16 +50,16 @@
             border-radius: 10px;
         }
         .node {
-            width: 120px;
-            height: 50px;
-            background-color: #17a2b8;
-            color: white;
-            font-weight: bold;
-            text-align: center;
-            line-height: 50px;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            border-radius: 50%;
             position: absolute;
             cursor: grab;
-            border-radius: 5px;
+            font-size: 32px;
             box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
             transition: transform 0.2s, box-shadow 0.2s;
         }
@@ -72,8 +72,8 @@
         }
         .node .delete-btn {
             position: absolute;
-            top: 5px;
-            right: 5px;
+            top: -5px;
+            right: -5px;
             background-color: #dc3545;
             color: white;
             border: none;
@@ -97,9 +97,9 @@
 <body>
     <h1>Logistics Flowchart Builder</h1>
     <div id="toolbar">
-        <button onclick="addNode('Supplier')">Add Supplier</button>
-        <button onclick="addNode('Warehouse')">Add Warehouse</button>
-        <button onclick="addNode('Transport')">Add Transport</button>
+        <button onclick="addNode('Supplier')">🏭 Add Supplier</button>
+        <button onclick="addNode('Warehouse')">📦 Add Warehouse</button>
+        <button onclick="addNode('Transport')">🚚 Add Transport</button>
         <button onclick="exportImage()">Export as PNG</button>
     </div>
     <div id="canvas"></div>
@@ -112,12 +112,21 @@
         function addNode(type) {
             const node = document.createElement('div');
             node.className = 'node';
-            node.innerText = type;
-            node.style.left = `${Math.random() * (window.innerWidth * 0.8)}px`;  // Random position
-            node.style.top = `${Math.random() * 400}px`;  // Random position
             node.draggable = true;
             node.id = 'node-' + nodeCount++;
             
+            // Assign icon based on type
+            let icon = '';
+            if (type === 'Supplier') icon = '🏭';
+            else if (type === 'Warehouse') icon = '📦';
+            else if (type === 'Transport') icon = '🚚';
+
+            node.innerHTML = icon;
+
+            // Random position
+            node.style.left = `${Math.random() * (window.innerWidth * 0.8)}px`;
+            node.style.top = `${Math.random() * 400}px`;
+
             // Store node info
             nodes.push(node);
 
@@ -149,8 +158,8 @@
             const node = document.getElementById(nodeId);
             const nodeIndex = nodes.indexOf(node);
 
-            node.style.left = event.clientX - 60 + 'px';
-            node.style.top = event.clientY - 25 + 'px';
+            node.style.left = event.clientX - 30 + 'px';
+            node.style.top = event.clientY - 30 + 'px';
 
             // Check for proximity with other nodes and draw lines if close
             nodes.forEach((otherNode, index) => {
@@ -166,26 +175,24 @@
         };
 
         function calculateDistance(node1, node2) {
-            const x1 = node1.offsetLeft + node1.offsetWidth / 2;
-            const y1 = node1.offsetTop + node1.offsetHeight / 2;
-            const x2 = node2.offsetLeft + node2.offsetWidth / 2;
-            const y2 = node2.offsetTop + node2.offsetHeight / 2;
+            const x1 = node1.offsetLeft + 30;
+            const y1 = node1.offsetTop + 30;
+            const x2 = node2.offsetLeft + 30;
+            const y2 = node2.offsetTop + 30;
             return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
         }
 
         function connectNodes(node1, node2) {
-            // Check if the line already exists
             const lineId = `${node1.id}-${node2.id}`;
             if (!lines.some(line => line.id === lineId)) {
                 const line = document.createElement('div');
                 line.className = 'line';
                 line.id = lineId;
                 
-                // Draw line between nodes
-                const x1 = node1.offsetLeft + node1.offsetWidth / 2;
-                const y1 = node1.offsetTop + node1.offsetHeight / 2;
-                const x2 = node2.offsetLeft + node2.offsetWidth / 2;
-                const y2 = node2.offsetTop + node2.offsetHeight / 2;
+                const x1 = node1.offsetLeft + 30;
+                const y1 = node1.offsetTop + 30;
+                const x2 = node2.offsetLeft + 30;
+                const y2 = node2.offsetTop + 30;
                 
                 const length = calculateDistance(node1, node2);
                 const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
@@ -210,12 +217,13 @@
         }
 
         function removeLines(node) {
-            lines.forEach((line) => {
+            lines = lines.filter(line => {
                 if (line.id.includes(node.id)) {
                     line.line.remove();
+                    return false;
                 }
+                return true;
             });
-            lines = lines.filter(line => !line.id.includes(node.id));
         }
 
         function exportImage() {
