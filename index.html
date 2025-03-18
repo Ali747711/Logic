@@ -86,6 +86,12 @@
         .node .delete-btn:hover {
             background-color: #c82333;
         }
+        .line {
+            position: absolute;
+            width: 2px;
+            background-color: #28a745;
+            z-index: -1;
+        }
     </style>
 </head>
 <body>
@@ -100,7 +106,9 @@
 
     <script>
         let nodeCount = 0;
-        
+        let nodes = [];
+        let lines = [];
+
         function addNode(type) {
             const node = document.createElement('div');
             node.className = 'node';
@@ -109,6 +117,9 @@
             node.style.top = `${Math.random() * 400}px`;  // Random position
             node.draggable = true;
             node.id = 'node-' + nodeCount++;
+            
+            // Store node info
+            nodes.push(node);
 
             // Create delete button for the node
             const deleteBtn = document.createElement('button');
@@ -116,6 +127,7 @@
             deleteBtn.innerText = 'X';
             deleteBtn.onclick = function () {
                 node.remove();
+                removeLines(node);
             };
             node.appendChild(deleteBtn);
 
@@ -135,9 +147,76 @@
             event.preventDefault();
             const nodeId = event.dataTransfer.getData('text');
             const node = document.getElementById(nodeId);
+            const nodeIndex = nodes.indexOf(node);
+
             node.style.left = event.clientX - 60 + 'px';
             node.style.top = event.clientY - 25 + 'px';
+
+            // Check for proximity with other nodes and draw lines if close
+            nodes.forEach((otherNode, index) => {
+                if (index !== nodeIndex) {
+                    const distance = calculateDistance(node, otherNode);
+                    if (distance < 150) {  // Threshold for connection
+                        connectNodes(node, otherNode);
+                    } else {
+                        removeLine(node, otherNode);
+                    }
+                }
+            });
         };
+
+        function calculateDistance(node1, node2) {
+            const x1 = node1.offsetLeft + node1.offsetWidth / 2;
+            const y1 = node1.offsetTop + node1.offsetHeight / 2;
+            const x2 = node2.offsetLeft + node2.offsetWidth / 2;
+            const y2 = node2.offsetTop + node2.offsetHeight / 2;
+            return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        }
+
+        function connectNodes(node1, node2) {
+            // Check if the line already exists
+            const lineId = `${node1.id}-${node2.id}`;
+            if (!lines.some(line => line.id === lineId)) {
+                const line = document.createElement('div');
+                line.className = 'line';
+                line.id = lineId;
+                
+                // Draw line between nodes
+                const x1 = node1.offsetLeft + node1.offsetWidth / 2;
+                const y1 = node1.offsetTop + node1.offsetHeight / 2;
+                const x2 = node2.offsetLeft + node2.offsetWidth / 2;
+                const y2 = node2.offsetTop + node2.offsetHeight / 2;
+                
+                const length = calculateDistance(node1, node2);
+                const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+
+                line.style.width = `${length}px`;
+                line.style.transform = `rotate(${angle}deg)`;
+                line.style.left = `${x1}px`;
+                line.style.top = `${y1}px`;
+
+                document.getElementById('canvas').appendChild(line);
+                lines.push({ id: lineId, line });
+            }
+        }
+
+        function removeLine(node1, node2) {
+            const lineId = `${node1.id}-${node2.id}`;
+            const lineIndex = lines.findIndex(line => line.id === lineId);
+            if (lineIndex !== -1) {
+                lines[lineIndex].line.remove();
+                lines.splice(lineIndex, 1);
+            }
+        }
+
+        function removeLines(node) {
+            lines.forEach((line) => {
+                if (line.id.includes(node.id)) {
+                    line.line.remove();
+                }
+            });
+            lines = lines.filter(line => !line.id.includes(node.id));
+        }
 
         function exportImage() {
             alert('Exporting feature to be implemented!');
